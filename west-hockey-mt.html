@@ -1650,6 +1650,117 @@
     top: 0;
   }
 
+
+  /* ===== BGM PLAYER ===== */
+  .bgm-toggle {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 90;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 1px solid rgba(78, 168, 255, 0.4);
+    background: rgba(10, 18, 38, 0.85);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+  .bgm-toggle:hover {
+    border-color: var(--neon);
+    transform: scale(1.05);
+  }
+  .bgm-toggle svg {
+    width: 22px;
+    height: 22px;
+    fill: var(--neon);
+  }
+  .bgm-toggle.playing {
+    border-color: var(--neon);
+    box-shadow: 0 0 20px rgba(78, 168, 255, 0.3);
+  }
+  /* 재생 중 음파 애니메이션 링 */
+  .bgm-toggle.playing::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 50%;
+    border: 1px solid var(--neon);
+    animation: bgm-ring 2s ease-out infinite;
+  }
+  @keyframes bgm-ring {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+
+  /* 곡 제목 토스트 */
+  .bgm-toast {
+    position: fixed;
+    right: 20px;
+    bottom: 84px;
+    z-index: 90;
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: rgba(10, 18, 38, 0.9);
+    border: 1px solid rgba(78, 168, 255, 0.3);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--rink);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.4s ease;
+    pointer-events: none;
+    max-width: calc(100vw - 40px);
+  }
+  .bgm-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .bgm-toast .note-icon {
+    color: var(--neon);
+    flex-shrink: 0;
+  }
+  .bgm-toast .track-title {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bgm-toast .track-sub {
+    color: rgba(232, 241, 255, 0.5);
+    font-size: 11px;
+  }
+
+  /* 음파 바 (재생 표시) */
+  .bgm-bars {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: 14px;
+  }
+  .bgm-bars span {
+    width: 2px;
+    background: var(--neon);
+    border-radius: 1px;
+    animation: bgm-bar 0.8s ease-in-out infinite;
+  }
+  .bgm-bars span:nth-child(1) { height: 6px; animation-delay: 0s; }
+  .bgm-bars span:nth-child(2) { height: 12px; animation-delay: 0.2s; }
+  .bgm-bars span:nth-child(3) { height: 8px; animation-delay: 0.4s; }
+  .bgm-bars span:nth-child(4) { height: 14px; animation-delay: 0.1s; }
+  @keyframes bgm-bar {
+    0%, 100% { transform: scaleY(0.4); }
+    50% { transform: scaleY(1); }
+  }
+
   /* ===== LIGHTBOX ===== */
   .lightbox {
     position: fixed;
@@ -1670,6 +1781,25 @@
 </style>
 </head>
 <body>
+  <!-- BGM -->
+  <audio id="bgm" loop preload="none">
+    <source src="BGM%20-%20West%20Hockey.mp3" type="audio/mpeg" />
+  </audio>
+
+  <div class="bgm-toast" id="bgm-toast">
+    <span class="note-icon">
+      <span class="bgm-bars"><span></span><span></span><span></span><span></span></span>
+    </span>
+    <span>
+      <span class="track-title">떠날 시간</span>
+      <span class="track-sub"> · West Hockey</span>
+    </span>
+  </div>
+
+  <button class="bgm-toggle" id="bgm-toggle" aria-label="음악 재생/정지">
+    <svg id="bgm-icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+  </button>
+
   <div class="container">
 
     <!-- HERO -->
@@ -2404,7 +2534,7 @@
           <span class="roster-tag base">물놀이 ✕</span>
           <a href="tel:01095101702" class="roster-phone">010-9510-1702</a>
         </div>
-        <div class="roster-row" data-search="최준성 010-9463-0332">
+        <div class="roster-row" data-search="최준성 010-9363-0332">
           <span class="roster-no">17</span>
           <span class="roster-name">최준성 <span class="gender-m">M</span></span>
           <span class="roster-tag base">물놀이 ✕</span>
@@ -2430,7 +2560,7 @@
     <!-- FOOTER -->
     <div class="footer reveal">
       <div class="footer-tag">WEST HOCKEY</div>
-      <div class="footer-copy">©Steven Cho</div>
+      <div class="footer-copy">© Steven Cho</div>
     </div>
   </div>
 
@@ -2464,6 +2594,80 @@
         });
       });
     }
+
+    // ===== BGM =====
+    (function() {
+      const audio = document.getElementById('bgm');
+      const toggle = document.getElementById('bgm-toggle');
+      const icon = document.getElementById('bgm-icon-play');
+      const toast = document.getElementById('bgm-toast');
+      if (!audio || !toggle) return;
+
+      const ICON_PLAY = '<path d="M8 5v14l11-7z"/>';
+      const ICON_PAUSE = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+
+      let started = false;
+      let userPaused = false;
+
+      audio.volume = 0;
+
+      function fadeIn() {
+        let v = 0;
+        const target = 0.55;
+        const step = setInterval(() => {
+          v += 0.03;
+          if (v >= target) { v = target; clearInterval(step); }
+          audio.volume = v;
+        }, 60);
+      }
+
+      function showToast() {
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3500);
+      }
+
+      function playMusic() {
+        audio.play().then(() => {
+          started = true;
+          userPaused = false;
+          fadeIn();
+          toggle.classList.add('playing');
+          icon.innerHTML = ICON_PAUSE;
+          showToast();
+        }).catch(() => {
+          // 재생 실패 시 무시 (다음 상호작용에서 재시도)
+        });
+      }
+
+      // 첫 상호작용에서 자동 시작
+      function onFirstInteraction() {
+        if (started || userPaused) return;
+        playMusic();
+        // 성공하면 리스너 제거
+        if (started) {
+          ['touchstart','click','scroll','keydown'].forEach(ev =>
+            window.removeEventListener(ev, onFirstInteraction)
+          );
+        }
+      }
+
+      ['touchstart','click','scroll','keydown'].forEach(ev =>
+        window.addEventListener(ev, onFirstInteraction, { passive: true })
+      );
+
+      // 토글 버튼 (수동 제어)
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (audio.paused) {
+          playMusic();
+        } else {
+          audio.pause();
+          userPaused = true;
+          toggle.classList.remove('playing');
+          icon.innerHTML = ICON_PLAY;
+        }
+      });
+    })();
   </script>
 </body>
 </html>
